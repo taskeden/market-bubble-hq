@@ -65,6 +65,13 @@ export function CinematicHero() {
   const floatingChat = chatVisible && theater;
   const sectionRef = useRef<HTMLElement>(null);
   const enteredAt = useRef(0);
+  // Auth modals (login / welcome) are portaled to <body>, so they're invisible
+  // while the player is in OS fullscreen. We drop native fullscreen when one
+  // opens (keeping the theater overlay) so the user can actually log in — and
+  // then type into chat.
+  const loginOpen = useHQ((s) => s.loginOpen);
+  const welcomeOpen = useHQ((s) => s.welcomeOpen);
+  const keepOverlayRef = useRef(false);
 
   // Custom volume control (YouTube chrome is hidden, so autoplay-muted needs its
   // own unmute) — driven via the IFrame API over postMessage (enablejsapi=1).
@@ -104,7 +111,9 @@ export function CinematicHero() {
 
   const enterFull = (target: "theater" | "cinema") => {
     enteredAt.current = Date.now();
-    setChatOpen(true);
+    // Enter fullscreen with the chat collapsed — the stream gets the whole frame;
+    // the edge tab reopens it on demand.
+    setChatOpen(false);
     setMode(target);
     const el = sectionRef.current as (HTMLElement & { webkitRequestFullscreen?: () => void }) | null;
     if (el && !document.fullscreenElement) {
@@ -133,7 +142,14 @@ export function CinematicHero() {
     const onChange = () => {
       const doc = document as Document & { webkitFullscreenElement?: Element };
       const stillFull = doc.fullscreenElement || doc.webkitFullscreenElement;
-      if (!stillFull && Date.now() - enteredAt.current > 400) setMode("inline");
+      if (stillFull) return;
+      // We dropped native fullscreen on purpose to surface an auth modal — keep
+      // the theater overlay rather than collapsing all the way to inline.
+      if (keepOverlayRef.current) {
+        keepOverlayRef.current = false;
+        return;
+      }
+      if (Date.now() - enteredAt.current > 400) setMode("inline");
     };
     document.addEventListener("fullscreenchange", onChange);
     document.addEventListener("webkitfullscreenchange", onChange);
@@ -142,6 +158,21 @@ export function CinematicHero() {
       document.removeEventListener("webkitfullscreenchange", onChange);
     };
   }, []);
+
+  // Surface auth modals from fullscreen: a body-portaled dialog can't render
+  // inside the OS fullscreen element, so exit native fullscreen (staying in the
+  // theater overlay) the moment login / welcome opens.
+  useEffect(() => {
+    if (!isFull || !(loginOpen || welcomeOpen)) return;
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element;
+      webkitExitFullscreen?: () => void;
+    };
+    if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+      keepOverlayRef.current = true;
+      (doc.exitFullscreen ?? doc.webkitExitFullscreen)?.call(doc);
+    }
+  }, [loginOpen, welcomeOpen, isFull]);
 
   // Esc + scroll-lock while the overlay is open (covers the case where OS
   // fullscreen never engaged, so there's no fullscreenchange to rely on).

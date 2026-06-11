@@ -3,20 +3,13 @@ import type { HostId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
- * Color-coded host name identifying WHOSE room a message came from — no plate,
- * no dot, just the name in the host's tag color: Ansem green, Banks white,
- * Market Bubble gold. Market Bubble shortens to "MB" so it doesn't run long.
- *
- * `em` renders the size in em units so the broadcast stage's viewport-scaled
- * font-size drives it too.
- */
-/**
  * Host color, in both a `text-` and `bg-` flavor, so the message tag and the
- * Source Matrix section dots stay in sync from one place: Ansem green, Banks
- * white, Market Bubble gold.
+ * Source Matrix section dots stay in sync from one place: Ansem Kick-green,
+ * Banks white, Market Bubble gold. Market Bubble shortens to "MB" so it doesn't
+ * run long.
  */
 export const HOST_TAG: Record<HostId, { text: string; dot: string }> = {
-  ansem: { text: "text-emerald-400", dot: "bg-emerald-400" },
+  ansem: { text: "text-kick", dot: "bg-kick" },
   banks: { text: "text-foreground", dot: "bg-foreground" },
   marketbubble: { text: "text-gold", dot: "bg-gold" },
 };
