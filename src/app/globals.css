@@ -1,0 +1,425 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root,
+  .dark {
+    /* ── Market Bubble — silver cardstock desk ─────────────────────────────
+       The whole surface is the embossed cardstock from their logo (sampled at
+       HSL ~264 4% 72%), so the mark sits in its native paper. Dark ink type, a
+       single editorial red, and platinum gloss for the broadcast nameplates. */
+
+    --background: 250 8% 78%; /* the banner's lit pearl cardstock tone */
+    --foreground: 258 12% 13%; /* dark ink */
+
+    --card: 252 15% 89%; /* clean raised card stock */
+    --card-foreground: 258 12% 13%;
+
+    --popover: 252 18% 93%;
+    --popover-foreground: 258 12% 13%;
+
+    /* Brand accent — editorial red (the handwritten ink / market red). */
+    --primary: 4 72% 49%;
+    --primary-foreground: 40 40% 97%;
+
+    --secondary: 250 8% 72%;
+    --secondary-foreground: 258 12% 16%;
+
+    --muted: 250 8% 75%;
+    --muted-foreground: 256 9% 37%;
+
+    --accent: 250 9% 73%;
+    --accent-foreground: 258 12% 13%;
+
+    --destructive: 4 72% 49%;
+    --destructive-foreground: 40 40% 97%;
+
+    --border: 250 8% 62%; /* engraved hairline rule (visible on pearl) */
+    --input: 250 8% 65%;
+    --ring: 4 72% 49%;
+
+    --radius: 0.5rem; /* tight, editorial */
+
+    /* Platform palette — darkened so each reads on the light paper.
+       X = black · Kick = green · Twitch = purple · HQ = gold. The editorial
+       red lives on `--primary`/`--hq` as the brand accent (buttons, live, ink). */
+    --twitch: 264 100% 64%; /* exact Twitch purple #9146FF */
+    --kick: 104 97% 54%; /* exact Kick neon green #53FC18 */
+    --x: 0 0% 12%; /* X is black on light */
+    --youtube: 0 85% 45%; /* electric video red — hue 0 vs HQ's editorial hue 4 */
+    --hq: 4 72% 49%; /* brand accent — editorial red */
+    --gold: 44 96% 53%; /* HQ native chat — lively achievement gold */
+
+    /* Bubbles co-host — deep bronze/champagne (reads on light). */
+    --bubble: 30 48% 40%;
+    --bubble-foreground: 40 45% 95%;
+
+    /* Editorial surfaces. */
+    --paper: 252 22% 95%; /* the brightest, cleanest card (business card) */
+    --paper-foreground: 258 12% 11%;
+    --silver: 252 9% 86%; /* platinum nameplate base */
+    --ink: 258 12% 9%; /* dark accents: ticker tab, plates */
+
+    --font-sans: var(--font-inter), system-ui, sans-serif;
+    --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
+    --font-mono: var(--font-mono-jb), ui-monospace, monospace;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    /* Cardstock texture on everything — the whole surface is the card. */
+    @apply bg-background text-foreground antialiased;
+    background-image: url("/brand/paper-grain.png");
+    background-size: 190px 190px;
+    background-blend-mode: overlay;
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Real Market Bubble cardstock — their banner's fine fiber, blended over
+     whatever background-color the surface already has. Applied full-surface:
+     the body, every card, and the chrome. (Not the dark video hero/Bubbles.) */
+  .textured {
+    background-image: url("/brand/paper-grain.png");
+    background-size: 190px 190px;
+    background-blend-mode: overlay;
+  }
+  .cardstock {
+    background-color: hsl(252 13% 85%);
+    background-image: url("/brand/paper-grain.png");
+    background-size: 190px 190px;
+    background-blend-mode: overlay;
+  }
+  /* The scrolling desk surface — same desk grain as the body, but it travels WITH
+     the content (background-attachment: local) instead of staying pinned to the
+     viewport, so scrolling feels like physically moving the paper. */
+  .desk-scroll {
+    background-color: hsl(var(--background));
+    background-image: url("/brand/paper-grain.png");
+    background-size: 190px 190px;
+    background-blend-mode: overlay;
+    background-attachment: local;
+  }
+
+  /* Cardstock dimensionality — a soft pearlescent sheen, barely there. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(75% 50% at 50% -6%, hsl(264 30% 99% / 0.6), transparent 60%),
+      radial-gradient(100% 80% at 50% 130%, hsl(260 14% 60% / 0.14), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Thin platinum scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+    background-clip: padding-box;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  /* Subtle paper surface. */
+  .glass {
+    @apply border border-black/[0.07] bg-white/30 backdrop-blur-xl;
+  }
+
+  .glass-card {
+    @apply rounded-lg border border-black/[0.08] bg-card/80 backdrop-blur-xl;
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.55) inset,
+      0 1px 2px 0 hsl(260 12% 30% / 0.12),
+      0 14px 34px -22px hsl(260 20% 20% / 0.5);
+  }
+
+  .glass-panel {
+    @apply border border-black/[0.06] bg-card/50 backdrop-blur-2xl;
+  }
+
+  /* Display serif — the wordmark / headline voice. */
+  .font-display {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+
+  /* The red marker hand — echoes the "Live every Thursday" note on their header. */
+  .font-hand {
+    font-family: var(--font-hand), "Segoe Script", "Bradley Hand", cursive;
+  }
+
+  /* The signature cable-news chyron: a glossy platinum lower-third with
+     heavy black serif type. */
+  .chyron {
+    background: linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #f4f2ec 36%,
+      #d7d5cd 62%,
+      #ecebe4 100%
+    );
+    color: hsl(26 14% 8%);
+    font-family: var(--font-serif);
+    box-shadow:
+      0 2px 0 0 hsl(0 0% 100% / 0.6) inset,
+      0 -3px 8px -3px hsl(30 12% 28% / 0.5) inset,
+      0 16px 34px -14px hsl(0 0% 0% / 0.75);
+  }
+
+  /* The brightest cardstock — a clean business card raised off the pearl desk. */
+  .paper-card {
+    background-color: hsl(252 22% 94%);
+    background-image:
+      url("/brand/paper-grain.png"),
+      radial-gradient(130% 130% at 0% 0%, hsl(252 28% 97%), hsl(252 16% 91%));
+    background-size: 190px 190px, cover;
+    background-blend-mode: overlay, normal;
+    color: hsl(var(--paper-foreground));
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.8) inset,
+      0 2px 4px 0 hsl(260 12% 30% / 0.1),
+      0 24px 60px -28px hsl(260 20% 20% / 0.55);
+  }
+
+  /* Newspaper column rule. */
+  .hairline {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* Ink headline gradient (on the light paper). */
+  .text-gradient-gold {
+    @apply bg-gradient-to-br from-[hsl(260_12%_16%)] to-[hsl(260_8%_40%)] bg-clip-text text-transparent;
+  }
+
+  .text-gradient-bubble {
+    @apply bg-gradient-to-br from-[hsl(30_45%_48%)] to-bubble bg-clip-text text-transparent;
+  }
+
+  .text-accent-red {
+    color: hsl(var(--hq));
+  }
+
+  .ring-live {
+    background: conic-gradient(
+      from 0deg,
+      hsl(var(--primary)),
+      hsl(4 80% 64%),
+      hsl(40 40% 80%),
+      hsl(var(--primary))
+    );
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+  }
+
+  .lift {
+    @apply transition-all duration-300 hover:-translate-y-0.5;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .mask-fade-y {
+    mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
+  }
+
+  .mask-fade-x {
+    mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+  }
+
+  .animate-in-up {
+    animation: in-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes in-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .glow-text-red {
+    text-shadow: 0 0 20px hsl(var(--hq) / 0.4);
+  }
+
+  /* Letterpress-style uppercase label. */
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+}
+
+/* Broadcast ticker crawls. Defined explicitly (not via Tailwind's animate-*)
+   so they're always present regardless of class purging. The tracks duplicate
+   their content, so a 50% translate loops seamlessly. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%); /* content moves left → reads right-to-left */
+  }
+}
+@keyframes marquee-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0); /* content moves right → reads left-to-right */
+  }
+}
+
+/* The cinematic stage fills the screen when promoted to the fullscreen top
+   layer (Watch Episode = cinema, Expand = theater). Higher specificity than the
+   inline `lg:h-[600px]`/`rounded-xl` utilities, so it wins without !important. */
+.hero-stage:fullscreen,
+.hero-stage:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  border-radius: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DARK MODE — "obsidian cardstock": the same luxury business card, milled in
+   graphite. Unlayered so it overrides the light tokens AND the Tailwind utility
+   classes (the app has no `dark:` variants, so these targeted flips are safe).
+   The bright business-card popups (login / welcome) are intentionally left
+   light, so they read like a physical card laid on the dark desk.
+   ════════════════════════════════════════════════════════════════════════════ */
+.dark {
+  color-scheme: dark;
+
+  --background: 257 15% 9%;
+  --foreground: 250 18% 92%;
+
+  --card: 256 14% 13%;
+  --card-foreground: 250 18% 92%;
+
+  --popover: 256 15% 16%;
+  --popover-foreground: 250 18% 92%;
+
+  --primary: 4 80% 58%;
+  --primary-foreground: 40 40% 97%;
+
+  --secondary: 256 12% 17%;
+  --secondary-foreground: 250 14% 88%;
+
+  --muted: 256 11% 19%;
+  --muted-foreground: 252 10% 62%;
+
+  --accent: 256 12% 20%;
+  --accent-foreground: 250 18% 92%;
+
+  --destructive: 4 80% 58%;
+  --destructive-foreground: 40 40% 97%;
+
+  --border: 255 12% 25%;
+  --input: 255 12% 22%;
+  --ring: 4 80% 58%;
+
+  /* Brand + platform palette, brightened to read on graphite. */
+  --twitch: 264 100% 74%; /* Twitch purple, lifted for graphite */
+  --kick: 104 92% 60%; /* Kick neon green, lifted for graphite */
+  --x: 0 0% 94%;
+  --youtube: 0 95% 62%; /* video red, lifted for graphite */
+  --hq: 4 80% 58%;
+  --gold: 45 100% 64%; /* lively achievement gold, brightened for dark */
+
+  --bubble: 32 64% 66%;
+  --bubble-foreground: 30 35% 10%;
+}
+
+/* Chrome (sidebar + header) — graphite cardstock keeps the paper grain. */
+.dark .cardstock {
+  background-color: hsl(256 14% 11%);
+}
+
+/* Desk sheen → a deep violet glow that grounds the dark card. */
+.dark body::before {
+  background:
+    radial-gradient(75% 50% at 50% -8%, hsl(266 45% 32% / 0.3), transparent 62%),
+    radial-gradient(100% 80% at 50% 130%, hsl(257 40% 6% / 0.55), transparent 60%);
+}
+
+/* Frosted component surfaces. */
+.dark .glass {
+  border-color: rgb(255 255 255 / 0.09);
+  background-color: rgb(255 255 255 / 0.05);
+}
+.dark .glass-card {
+  border-color: rgb(255 255 255 / 0.1);
+}
+.dark .glass-panel {
+  border-color: rgb(255 255 255 / 0.08);
+}
+
+/* The cardstock's hairline borders + recessed fills are tuned for light paper —
+   flip them to light-on-dark so they stay visible on graphite. */
+.dark .border-black\/\[0\.05\] { border-color: rgb(255 255 255 / 0.08); }
+.dark .border-black\/\[0\.06\] { border-color: rgb(255 255 255 / 0.09); }
+.dark .border-black\/\[0\.07\] { border-color: rgb(255 255 255 / 0.1); }
+.dark .border-black\/\[0\.08\] { border-color: rgb(255 255 255 / 0.12); }
+.dark .border-black\/10 { border-color: rgb(255 255 255 / 0.12); }
+
+.dark .bg-black\/\[0\.02\] { background-color: rgb(255 255 255 / 0.03); }
+.dark .bg-black\/\[0\.03\] { background-color: rgb(255 255 255 / 0.04); }
+.dark .bg-black\/\[0\.05\] { background-color: rgb(255 255 255 / 0.06); }
+.dark .bg-black\/\[0\.06\] { background-color: rgb(255 255 255 / 0.07); }
+.dark .bg-black\/\[0\.08\] { background-color: rgb(255 255 255 / 0.09); }
+.dark .bg-black\/10 { background-color: rgb(255 255 255 / 0.1); }
+
+.dark .hover\:bg-black\/\[0\.02\]:hover { background-color: rgb(255 255 255 / 0.04); }
+.dark .hover\:bg-black\/\[0\.035\]:hover { background-color: rgb(255 255 255 / 0.05); }
+.dark .hover\:bg-black\/\[0\.04\]:hover { background-color: rgb(255 255 255 / 0.06); }
+.dark .hover\:bg-black\/\[0\.05\]:hover { background-color: rgb(255 255 255 / 0.07); }
+.dark .hover\:bg-black\/\[0\.06\]:hover { background-color: rgb(255 255 255 / 0.08); }
+
