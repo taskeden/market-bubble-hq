@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { Mic, MicOff, Loader2, PhoneOff, MessageSquare, KeyRound } from "lucide-react";
@@ -98,25 +98,35 @@ function VoiceInner({ onSwitchToChat }: { onSwitchToChat?: () => void }) {
   // Lets `onError` re-open a session without referencing `conversation` before it
   // is declared (TDZ); refreshed every render with the live startSession.
   const reconnectRef = useRef<(withVoice: boolean) => void>(() => {});
+  // Read the pinned voice through a ref so the handlers below can stay stable.
+  const voiceIdRef = useRef(voiceId);
+  voiceIdRef.current = voiceId;
 
   // Lifecycle callbacks live on the hook (the documented, always-registered spot)
-  // so status + errors surface reliably instead of being swallowed mid-connect.
-  const conversation = useConversation({
-    onConnect: () => setPhase("idle"),
-    onDisconnect: () => setPhase("idle"),
-    onError: (message?: string) => {
-      // A rejected voice override (overrides not enabled in the agent's security
-      // settings) kills the connect. Retry once in the agent's default voice so
-      // Talk still works, then surface anything that fails after that.
-      if (!retriedRef.current && voiceId && tokenRef.current) {
-        retriedRef.current = true;
-        reconnectRef.current(false);
-        return;
-      }
-      setError(friendlyError(message));
-      setPhase("error");
-    },
-  });
+  // so status + errors surface reliably. The options object is memoized to a
+  // STABLE reference (reading mutable values via refs) — otherwise a fresh object
+  // every render makes the SDK re-init and drop the live session. This matters
+  // most in demo mode, where the growing feed re-renders this tree constantly.
+  const handlers = useMemo(
+    () => ({
+      onConnect: () => setPhase("idle"),
+      onDisconnect: () => setPhase("idle"),
+      onError: (message?: string) => {
+        // A rejected voice override (overrides not enabled in the agent's security
+        // settings) kills the connect. Retry once in the agent's default voice so
+        // Talk still works, then surface anything that fails after that.
+        if (!retriedRef.current && voiceIdRef.current && tokenRef.current) {
+          retriedRef.current = true;
+          reconnectRef.current(false);
+          return;
+        }
+        setError(friendlyError(message));
+        setPhase("error");
+      },
+    }),
+    []
+  );
+  const conversation = useConversation(handlers);
   const { status, isSpeaking, isMuted, setMuted } = conversation;
 
   const live = status === "connected";
