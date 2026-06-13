@@ -46,6 +46,19 @@ export function CinematicHero() {
     refetchInterval: 120_000, // pick up "going live" without a reload
   });
 
+  // Real Twitch live status — so the hero shows the host's Twitch stream the
+  // moment they go live there, even without a YouTube simulcast.
+  const { data: tw } = useQuery<{ live: boolean }>({
+    queryKey: ["twitch-live"],
+    queryFn: async () => {
+      const r = await fetch("/api/twitch");
+      if (!r.ok) throw new Error("Failed to load Twitch status");
+      return r.json();
+    },
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
+
   useEffect(() => {
     setHost(window.location.hostname);
   }, []);
@@ -221,9 +234,10 @@ export function CinematicHero() {
     };
   }, [isFull]);
 
-  // No source picker: if the channel is live, play the Twitch live stream;
-  // otherwise play the most-recent YouTube episode (replay).
-  const live = yt?.live === true;
+  // No source picker: if the host is live (on Twitch directly, or detected via
+  // the YouTube simulcast), play the Twitch live stream; otherwise play the
+  // most-recent YouTube episode (replay).
+  const live = tw?.live === true || yt?.live === true;
   const source: "youtube" | "twitch" = live ? "twitch" : "youtube";
 
   const embed =
@@ -258,6 +272,30 @@ export function CinematicHero() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bubblesSpeaking, muted, source, embed]);
+
+  // Muted autoplay is often blocked — Twitch's embed especially shows its own
+  // play button until the page gets a real user gesture. On the viewer's first
+  // interaction anywhere, reload the stream inside that gesture so it starts
+  // playing on its own (a live stream just re-syncs to live — nothing lost).
+  useEffect(() => {
+    if (source !== "twitch" || !embed) return;
+    let done = false;
+    const kick = () => {
+      if (done || !iframeRef.current) return;
+      done = true;
+      iframeRef.current.src = `${embed}&_n=${Date.now()}`; // reload within the gesture → autoplay
+      teardown();
+    };
+    const teardown = () => {
+      window.removeEventListener("pointerdown", kick, true);
+      window.removeEventListener("keydown", kick, true);
+      window.removeEventListener("touchstart", kick, true);
+    };
+    window.addEventListener("pointerdown", kick, true);
+    window.addEventListener("keydown", kick, true);
+    window.addEventListener("touchstart", kick, true);
+    return teardown;
+  }, [source, embed]);
 
   // A YouTube source that isn't currently live is a replay of the latest episode.
   const isReplay = source === "youtube" && yt?.live === false && !!yt.videoId;

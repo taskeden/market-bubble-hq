@@ -20,6 +20,10 @@ export function isDemoMode(): boolean {
   const p = new URLSearchParams(window.location.search).get("demo");
   if (p === "1" || p === "true") return true;
   if (p === "0" || p === "false") return false;
+  // An explicit env NEXT_PUBLIC_DATA_MODE=live is authoritative: a stale saved
+  // demo preference must not silently keep the sim crowd on over the real rooms.
+  // (?demo=1 above still forces a one-off demo session when you want one.)
+  if (DATA_MODE === "live") return false;
   return window.localStorage.getItem(KEY) === "1";
 }
 

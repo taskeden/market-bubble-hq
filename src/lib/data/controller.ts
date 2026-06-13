@@ -2,6 +2,7 @@ import { useHQ } from "@/store/hq-store";
 import { effectiveDataMode } from "@/lib/demo";
 import { backfill, type ChatSource } from "./engine";
 import { createChatSources } from "./adapters";
+import { capPreservingPlatforms, loadChatLog, saveChatLog } from "./chat-log";
 
 // ─── Engine controller ───────────────────────────────────────────────────────
 // A reference-counted singleton that wires the active chat sources + cadence
@@ -33,7 +34,9 @@ async function seedHistory() {
   const store = useHQ.getState();
   const byId = new Map<string, (typeof merged)[number]>();
   for (const m of [...merged, ...store.messages]) byId.set(m.id, m);
-  const combined = [...byId.values()].sort((a, b) => a.timestamp - b.timestamp);
+  // The backlog above is Twitch-only recent history — keep the rarer platforms
+  // (Kick/X/YouTube/HQ) so it doesn't re-flood and evict them on every reload.
+  const combined = capPreservingPlatforms([...byId.values()], 220);
   store.seed(combined);
 }
 
@@ -44,10 +47,16 @@ function activate() {
 
   const mode = effectiveDataMode();
   if (!seeded) {
-    // Live mode starts EMPTY on purpose — the feed is purely the rooms' real
-    // chat (recent backlog + live), nothing fabricated. Demo mode pre-fills a
-    // big backlog so the feed looks busy the instant it loads.
-    if (mode === "simulation") store.seed(backfill(60));
+    if (mode === "simulation") {
+      // Demo mode pre-fills a big backlog so the feed looks busy instantly.
+      store.seed(backfill(60));
+    } else {
+      // Live mode is real-only: seed from the persisted on-device log so the
+      // feed opens with the last real conversation instead of dead air when the
+      // rooms are quiet. The Twitch backlog (seedHistory) merges on top.
+      const logged = loadChatLog();
+      if (logged.length) store.seed(logged);
+    }
     store.recomputeIntelligence();
     store.tickStats();
     seeded = true;
@@ -60,7 +69,12 @@ function activate() {
     });
   }
   // Backfill real history alongside the live connections (live mode only).
-  if (mode === "live") void seedHistory();
+  if (mode === "live") {
+    void seedHistory();
+    // Persist the rolling real-chat log every few seconds so the feed survives
+    // quiet stretches and offline gaps (seeds back in on the next load).
+    timers.push(setInterval(() => saveChatLog(useHQ.getState().messages), 5000));
+  }
 
   timers.push(setInterval(() => isRunning() && useHQ.getState().tickStats(), 2000));
   timers.push(setInterval(() => isRunning() && useHQ.getState().recomputeIntelligence(), 3500));
