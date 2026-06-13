@@ -142,30 +142,43 @@ export function watchlistSnapshot(tickers: string[]): {
 
 /** Trending stocks ranked by mentions in the buffer. */
 export function computeTrendingStocks(messages: ChatMessage[], limit = 6): TrendingStock[] {
-  const counts = new Map<string, ChatMessage[]>();
+  const live = new Map<string, ChatMessage[]>();
   for (const m of messages) {
     for (const t of m.tickers) {
-      if (!counts.has(t)) counts.set(t, []);
-      counts.get(t)!.push(m);
+      if (!live.has(t)) live.set(t, []);
+      live.get(t)!.push(m);
     }
   }
-  const rows: TrendingStock[] = [];
-  counts.forEach((msgs, ticker) => {
+
+  // Build on the lived-in baseline so the board is always full — in live mode
+  // the real chat is mostly banter and names few tickers, which would otherwise
+  // leave it nearly empty. Live mentions BOOST a ticker's standing and set its
+  // sentiment, so genuine community interest still rises to the top.
+  const board = new Map<string, TrendingStock>();
+  for (const r of baselineStocks(BASELINE_TICKERS.length)) board.set(r.ticker, { ...r });
+
+  live.forEach((msgs, ticker) => {
     const state = market.get(ticker);
     const meta = TICKERS.find((x) => x.ticker === ticker);
     if (!state || !meta) return;
-    rows.push({
-      ticker,
-      name: meta.name,
-      mentions: msgs.length,
-      change: ((state.price - state.base) / state.base) * 100,
-      sentiment: dominantSentiment(msgs),
-      sparkline: state.history.slice(-16),
-    });
+    const boost = msgs.length * 70; // a single real mention meaningfully lifts a name
+    const existing = board.get(ticker);
+    if (existing) {
+      existing.mentions += boost;
+      existing.sentiment = dominantSentiment(msgs);
+    } else {
+      board.set(ticker, {
+        ticker,
+        name: meta.name,
+        mentions: 160 + boost,
+        change: ((state.price - state.base) / state.base) * 100,
+        sentiment: dominantSentiment(msgs),
+        sparkline: state.history.slice(-16),
+      });
+    }
   });
-  rows.sort((a, b) => b.mentions - a.mentions);
-  // No real ticker mentions in the buffer yet → show the lived-in baseline.
-  return rows.length ? rows.slice(0, limit) : baselineStocks(limit);
+
+  return [...board.values()].sort((a, b) => b.mentions - a.mentions).slice(0, limit);
 }
 
 /** Trending discussion topics — tickers + macro keywords, with velocity. */
