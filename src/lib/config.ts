@@ -297,12 +297,12 @@ export function levelTitle(level: number): string {
   return "Newcomer";
 }
 
-/** Ships in simulation (the built-in lively crowd) so a fresh clone is fully
-    alive out of the box with zero setup. Set NEXT_PUBLIC_DATA_MODE=live in
-    .env.local to connect the real rooms (the feed then only moves when actual
-    messages arrive). */
+/** Ships in LIVE — connects the real Twitch/Kick/YouTube/X rooms, so the feed
+    reflects the actual stream (it only moves when real messages arrive). Set
+    NEXT_PUBLIC_DATA_MODE=simulation in .env.local to run the built-in lively
+    demo crowd instead. */
 export const DATA_MODE: "simulation" | "live" =
-  (process.env.NEXT_PUBLIC_DATA_MODE as "simulation" | "live") || "simulation";
+  (process.env.NEXT_PUBLIC_DATA_MODE as "simulation" | "live") || "live";
 
 /** Ansem's Kick chatroom id (kick.com/ansem → chatroom 108796898). Chatroom ids
     are permanent per channel; Kick's channel-lookup API sits behind Cloudflare
