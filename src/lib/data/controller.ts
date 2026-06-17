@@ -3,6 +3,7 @@ import { effectiveDataMode } from "@/lib/demo";
 import { backfill, type ChatSource } from "./engine";
 import { createChatSources } from "./adapters";
 import { capPreservingPlatforms, loadChatLog, saveChatLog } from "./chat-log";
+import { SEED_CHAT } from "./seed-chat";
 
 // ─── Engine controller ───────────────────────────────────────────────────────
 // A reference-counted singleton that wires the active chat sources + cadence
@@ -53,9 +54,11 @@ function activate() {
     } else {
       // Live mode is real-only: seed from the persisted on-device log so the
       // feed opens with the last real conversation instead of dead air when the
-      // rooms are quiet. The Twitch backlog (seedHistory) merges on top.
+      // rooms are quiet. A fresh browser / the deployed site has no log yet, so
+      // fall back to the committed real last-stream seed. The Twitch backlog
+      // (seedHistory) merges on top.
       const logged = loadChatLog();
-      if (logged.length) store.seed(logged);
+      store.seed(logged.length ? logged : SEED_CHAT);
     }
     store.recomputeIntelligence();
     store.tickStats();
